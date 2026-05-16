@@ -11,85 +11,67 @@ function resolveFileUrl() {
   return `file://${path.resolve(__dirname, '..', STUDENT_FILE)}`;
 }
 
-const FRUITS_ZIPPER = [
-  '月足 天音',
-  '鎮西 寿々歌',
-  '櫻井 優衣',
-  '仲川 瑠夏',
-  '真中 まな',
-  '松本 かれん',
-  '早瀬 ノエル',
-];
-const CANDY_TUNE = [
-  '福山 梨乃',
-  '小川 奈々子',
-  '村川 緋杏',
-  '南 なつ',
-  '立花 琴未',
-  '宮野 静',
-  '桐原 美月',
-];
-const CUTIE_STREET = [
-  '古澤 里紗',
-  '佐野 愛花',
-  '板倉 可奈',
-  '増田 彩乃',
-  '川本 笑瑠',
-  '梅田 みゆ',
-  '真鍋 凪咲',
-  '桜庭 遥花',
-];
+const ALL = ['進撃の巨人', '君たちはどう生きるか', 'ゼルダの伝説'];
+const ANIME = ['進撃の巨人'];
+const MOVIE = ['君たちはどう生きるか'];
+const GAME = ['ゼルダの伝説'];
 
-async function getMemberTexts(page) {
-  return await page.$$eval('.members li', (els) =>
-    els.map((el) => el.textContent.trim())
+// 表示中（display:none / visibility:hidden でない）の .item のタイトルを DOM 順で返す。
+// .hidden クラスでも style.display でも、結果が同じなら通るように見た目だけで判定する。
+async function getVisibleTitles(page) {
+  return await page.$$eval('.items .item', (els) =>
+    els
+      .filter((el) => {
+        const cs = window.getComputedStyle(el);
+        return cs.display !== 'none' && cs.visibility !== 'hidden';
+      })
+      .map((el) => el.querySelector('.item-title').textContent.trim())
   );
 }
 
-test('初期状態では .members の中身は空', async ({ page }) => {
+test('初期状態ではすべての .item が表示されている', async ({ page }) => {
   await page.goto(resolveFileUrl());
-  const items = await getMemberTexts(page);
-  expect(items.length).toBe(0);
+  expect(await getVisibleTitles(page)).toEqual(ALL);
 });
 
-test('FRUITS ZIPPER ボタンで FRUITS ZIPPER のメンバーが表示される', async ({ page }) => {
+test('アニメボタンで anime の .item だけが表示される', async ({ page }) => {
   await page.goto(resolveFileUrl());
-  await page.click('#fruits_zipper');
-  const items = await getMemberTexts(page);
-  expect(items).toEqual(FRUITS_ZIPPER);
+  await page.click('.filter-buttons button[data-genre="anime"]');
+  expect(await getVisibleTitles(page)).toEqual(ANIME);
 });
 
-test('CANDY TUNE ボタンで CANDY TUNE のメンバーが表示される', async ({ page }) => {
+test('映画ボタンで movie の .item だけが表示される', async ({ page }) => {
   await page.goto(resolveFileUrl());
-  await page.click('#candy_tune');
-  const items = await getMemberTexts(page);
-  expect(items).toEqual(CANDY_TUNE);
+  await page.click('.filter-buttons button[data-genre="movie"]');
+  expect(await getVisibleTitles(page)).toEqual(MOVIE);
 });
 
-test('CUTIE STREET ボタンで CUTIE STREET のメンバーが表示される', async ({ page }) => {
+test('ゲームボタンで game の .item だけが表示される', async ({ page }) => {
   await page.goto(resolveFileUrl());
-  await page.click('#cutie_street');
-  const items = await getMemberTexts(page);
-  expect(items).toEqual(CUTIE_STREET);
+  await page.click('.filter-buttons button[data-genre="game"]');
+  expect(await getVisibleTitles(page)).toEqual(GAME);
 });
 
-test('ボタンを切り替えると前のメンバーは残らない（総入れ替え）', async ({ page }) => {
+test('「すべて表示」ボタンでフィルタが解除され全件表示に戻る', async ({ page }) => {
   await page.goto(resolveFileUrl());
 
-  await page.click('#fruits_zipper');
-  let items = await getMemberTexts(page);
-  expect(items).toEqual(FRUITS_ZIPPER);
+  // 一度ジャンルで絞り込む
+  await page.click('.filter-buttons button[data-genre="anime"]');
+  expect(await getVisibleTitles(page)).toEqual(ANIME);
 
-  // FRUITS ZIPPER → CANDY TUNE に切り替え
-  await page.click('#candy_tune');
-  items = await getMemberTexts(page);
-  expect(items).toEqual(CANDY_TUNE);
-  // FRUITS ZIPPER のメンバーが残っていないこと
-  expect(items).not.toContain(FRUITS_ZIPPER[0]);
+  // 「すべて表示」で全件に戻る（前のフィルタが残らないこと）
+  await page.click('.filter-buttons .filter-all-btn');
+  expect(await getVisibleTitles(page)).toEqual(ALL);
+});
 
-  // CANDY TUNE → CUTIE STREET に切り替え
-  await page.click('#cutie_street');
-  items = await getMemberTexts(page);
-  expect(items).toEqual(CUTIE_STREET);
-  expect(items).not.toContain(CANDY_TUNE[0]);
+test('別ジャンルに切り替えると前のジャンルの .item は残らない', async ({ page }) => {
+  await page.goto(resolveFileUrl());
+
+  await page.click('.filter-buttons button[data-genre="anime"]');
+  expect(await getVisibleTitles(page)).toEqual(ANIME);
+
+  await page.click('.filter-buttons button[data-genre="game"]');
+  const titles = await getVisibleTitles(page);
+  expect(titles).toEqual(GAME);
+  expect(titles).not.toContain(ANIME[0]);
 });

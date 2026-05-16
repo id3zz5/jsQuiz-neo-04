@@ -49,7 +49,7 @@ jobs:
               body = [
                 '## ✅ 合格！',
                 '',
-                `**${file}** のボタン操作と \`.members\` のメンバー表示が正しく動きました。`,
+                `**${file}** のボタン操作と \`.item\` のフィルタリング表示が正しく動きました。`,
                 'お疲れ様でした！',
               ].join('\n');
             } else if (result === 'no_file') {
@@ -63,18 +63,14 @@ jobs:
               body = [
                 '## ❌ 不合格',
                 '',
-                `**${file}** のボタン操作、または \`.members\` の表示が期待通りに動きませんでした。`,
+                `**${file}** のボタン操作、または \`.item\` の表示／非表示が期待通りに動きませんでした。`,
                 '',
                 '**確認ポイント**',
-                '- 関数 `changeMember(team)` を定義していますか？（引数に配列を受け取る）',
-                '- 関数の中で `.members` の中身を一度空にしていますか？（`innerHTML = ""` など）',
-                '- 引数 `team` の各メンバーを `<li>名前</li>` として `.members` に追加していますか？（`forEach` が便利）',
-                '- 3つのボタンそれぞれに `click` イベントを設定していますか？',
-                '    - `#fruits_zipper` → `changeMember(fruitsZipper)`',
-                '    - `#candy_tune`    → `changeMember(candyTune)`',
-                '    - `#cutie_street`  → `changeMember(cutieStreet)`',
-                '- ボタンを切り替えたとき、前のグループのメンバーが残っていませんか？（総入れ替えになっているか）',
-                '- 配列 `fruitsZipper` / `candyTune` / `cutieStreet` はひな形のまま変更していませんか？',
+                '- 各 `.filter-btn` ボタンに `click` イベントを設定していますか？（`buttons.forEach` → `addEventListener`）',
+                '- ジャンルボタン（`data-genre="anime"` など）で `filterItems(そのジャンル)` を呼んでいますか？',
+                '- 「すべて表示」ボタン（`.filter-all-btn`・`data-genre` なし）で `showAllItems()` を呼んでいますか？',
+                '- 用意済みの `items` / `buttons` / `filterItems` / `showAllItems` を書き換えたり、宣言し直したりしていませんか？',
+                '- 別ジャンルに切り替えたとき、前のジャンルの `.item` が残っていませんか？',
                 '',
                 'コードを修正して再度 push してください。',
               ].join('\n');
